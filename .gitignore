@@ -7,7 +7,6 @@ env/
 
 # Local data generated from INDEC downloads
 data/infoCruda/eph/
-data/infoProcesada/eph/
 
 # Generated outputs
 outputs/figures/*

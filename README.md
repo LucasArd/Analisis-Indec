@@ -7,7 +7,7 @@ Proyecto para analizar microdatos de la Encuesta Permanente de Hogares (EPH) de 
 ```text
 data/
   infoCruda/       # descargas originales, no versionadas
-  infoProcesada/   # bases unificadas generadas, no versionadas
+  infoProcesada/   # bases unificadas para el analisis
   infoInflacion/   # datos de inflacion
 outputs/
   figures/         # graficos generados
@@ -56,4 +56,4 @@ data/infoProcesada/eph/resumen_archivos_eph.csv
 
 ## Nota sobre datos
 
-Las bases crudas y procesadas no se suben al repositorio porque son archivos pesados y reproducibles desde la fuente oficial. Para trabajar, cada integrante debe ejecutar los scripts anteriores.
+Las bases crudas de INDEC no se suben al repositorio porque son archivos reproducibles desde la fuente oficial. Las bases procesadas si se versionan para que el equipo pueda empezar a trabajar sin reconstruir todo el pipeline.
