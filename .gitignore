@@ -8,12 +8,6 @@ env/
 # Local data generated from INDEC downloads
 data/infoCruda/eph/
 
-# Generated outputs
-outputs/figures/*
-outputs/tables/*
-!outputs/figures/.gitkeep
-!outputs/tables/.gitkeep
-
 # Office/editor temporary files
 ~$*.docx
 .DS_Store

@@ -54,6 +54,25 @@ data/infoProcesada/eph/eph_hogar_2016T2_2025T4.csv.gz
 data/infoProcesada/eph/resumen_archivos_eph.csv
 ```
 
+## Ejecutar analisis principal
+
+Genera tablas, graficos, base filtrada para los aglomerados 17 y 34, modelo de imputacion e informe base:
+
+```powershell
+python src/run_analysis.py
+```
+
+Salidas principales:
+
+```text
+data/infoProcesada/eph/eph_aglomerados_17_34.csv.gz
+data/infoInflacion/
+outputs/figures/
+outputs/tables/
+informe/informe_base.md
+informe/informe_base.docx
+```
+
 ## Nota sobre datos
 
 Las bases crudas de INDEC no se suben al repositorio porque son archivos reproducibles desde la fuente oficial. Las bases procesadas si se versionan para que el equipo pueda empezar a trabajar sin reconstruir todo el pipeline.
