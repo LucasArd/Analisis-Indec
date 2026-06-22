@@ -14,6 +14,166 @@ REPORT_PATH = ROOT / "informe.docx"
 TABLES = ROOT / "outputs" / "tables"
 FIGURES = ROOT / "outputs" / "figures"
 
+SPANISH_REPLACEMENTS = {
+    "Evolucion": "Evolución",
+    "evolucion": "evolución",
+    "Introduccion": "Introducción",
+    "introduccion": "introducción",
+    "metodologia": "metodología",
+    "Metodologia": "Metodología",
+    "analisis": "análisis",
+    "Analisis": "Análisis",
+    "comparacion": "comparación",
+    "Comparacion": "Comparación",
+    "seleccion": "selección",
+    "Seleccion": "Selección",
+    "dinamica": "dinámica",
+    "Dinamica": "Dinámica",
+    "energetica": "energética",
+    "Energetica": "Energética",
+    "informacion": "información",
+    "Informacion": "Información",
+    "inflacion": "inflación",
+    "Inflacion": "Inflación",
+    "poblacion": "población",
+    "Poblacion": "Población",
+    "ocupacion": "ocupación",
+    "Ocupacion": "Ocupación",
+    "desocupacion": "desocupación",
+    "Desocupacion": "Desocupación",
+    "educacion": "educación",
+    "Educacion": "Educación",
+    "regresion": "regresión",
+    "Regresion": "Regresión",
+    "imputacion": "imputación",
+    "Imputacion": "Imputación",
+    "estimacion": "estimación",
+    "Estimacion": "Estimación",
+    "dispersion": "dispersión",
+    "Dispersion": "Dispersión",
+    "distribucion": "distribución",
+    "Distribucion": "Distribución",
+    "posicion": "posición",
+    "Posicion": "Posición",
+    "medicion": "medición",
+    "Medicion": "Medición",
+    "codigo": "código",
+    "Codigo": "Código",
+    "codigos": "códigos",
+    "Codigos": "Códigos",
+    "periodo": "período",
+    "Periodo": "Período",
+    "trimestre": "trimestre",
+    "graficos": "gráficos",
+    "Graficos": "Gráficos",
+    "grafico": "gráfico",
+    "Grafico": "Gráfico",
+    "estadistica": "estadística",
+    "Estadistica": "Estadística",
+    "estadisticas": "estadísticas",
+    "Estadisticas": "Estadísticas",
+    "economicamente": "económicamente",
+    "Economicamente": "Económicamente",
+    "ademas": "además",
+    "Ademas": "Además",
+    "tambien": "también",
+    "Tambien": "También",
+    "terminos": "términos",
+    "Terminos": "Términos",
+    "mas ": "más ",
+    "Mas ": "Más ",
+    "maximo": "máximo",
+    "Maximo": "Máximo",
+    "minimo": "mínimo",
+    "Minimo": "Mínimo",
+    "critico": "crítico",
+    "Critico": "Crítico",
+    "tecnica": "técnica",
+    "Tecnica": "Técnica",
+    "tecnico": "técnico",
+    "Tecnico": "Técnico",
+    "patagonica": "patagónica",
+    "Patagonica": "Patagónica",
+    "turismo": "turismo",
+    "estacionalidad": "estacionalidad",
+    "monetario": "monetario",
+    "automaticamente": "automáticamente",
+    "Automaticamente": "Automáticamente",
+    "intercuartilico": "intercuartílico",
+    "Intercuartilico": "Intercuartílico",
+    "asimetrica": "asimétrica",
+    "Asimetrica": "Asimétrica",
+    "asimetria": "asimetría",
+    "Asimetria": "Asimetría",
+    "heterogeneas": "heterogéneas",
+    "Heterogeneas": "Heterogéneas",
+    "puntuales": "puntuales",
+    "disponibles": "disponibles",
+    "lineal": "lineal",
+    "logaritmo": "logaritmo",
+    "variacion": "variación",
+    "Variacion": "Variación",
+    "explicativa": "explicativa",
+    "sistematicas": "sistemáticas",
+    "Sistematicas": "Sistemáticas",
+    "categorias": "categorías",
+    "Categorias": "Categorías",
+    "anio": "año",
+    "Anio": "Año",
+    "Neuquen": "Neuquén",
+    "sociodemograficas": "sociodemográficas",
+    "Sociodemograficas": "Sociodemográficas",
+    "caida": "caída",
+    "Caida": "Caída",
+    "esta disponible": "está disponible",
+    "esta atravesado": "está atravesado",
+    "urbaños": "urbanos",
+    "engañosa": "engañosa",
+    "enganosas": "engañosas",
+    "proximos": "próximos",
+    "Proximos": "Próximos",
+    "Sintesis": "Síntesis",
+    "sintesis": "síntesis",
+    "evaluacion": "evaluación",
+    "Evaluacion": "Evaluación",
+    "multiple": "múltiple",
+    "Multiple": "Múltiple",
+    "unicamente": "únicamente",
+    "Unicamente": "Únicamente",
+    "relacion": "relación",
+    "Relacion": "Relación",
+    "especificacion": "especificación",
+    "Especificacion": "Especificación",
+    "regularizacion": "regularización",
+    "Regularizacion": "Regularización",
+    "entreno": "entrenó",
+    "Entreno": "Entrenó",
+    "evaluo": "evaluó",
+    "Evaluo": "Evaluó",
+    "particion": "partición",
+    "Particion": "Partición",
+    "desvio": "desvío",
+    "Desvio": "Desvío",
+    "practicamente": "prácticamente",
+    "Practicamente": "Prácticamente",
+    "geografica": "geográfica",
+    "Geografica": "Geográfica",
+    "historico": "histórico",
+    "Historico": "Histórico",
+    "unica": "única",
+    "Unica": "Única",
+    "ocupacion": "ocupación",
+    "Descripcion": "Descripción",
+    "descripcion": "descripción",
+    "Calculo": "Cálculo",
+    "calculo": "cálculo",
+    "univariada": "univariada",
+    "Atipicos": "Atípicos",
+    "atipicos": "atípicos",
+    "Energeticas": "Energéticas",
+    "energeticas": "energéticas",
+}
+
 
 def set_cell_shading(cell, fill: str) -> None:
     tc_pr = cell._tc.get_or_add_tcPr()
@@ -40,28 +200,51 @@ def fmt_money(value) -> str:
     return f"${float(value):,.0f}".replace(",", ".")
 
 
+def normalize_spanish(text: str) -> str:
+    for source, target in SPANISH_REPLACEMENTS.items():
+        text = text.replace(source, target)
+    return text
+
+
+def normalize_doc_text(doc: Document) -> None:
+    for paragraph in doc.paragraphs:
+        for run in paragraph.runs:
+            if run._element.xpath(".//w:drawing"):
+                continue
+            run.text = normalize_spanish(run.text)
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        if run._element.xpath(".//w:drawing"):
+                            continue
+                        run.text = normalize_spanish(run.text)
+
+
 def add_paragraph(doc: Document, text: str) -> None:
-    p = doc.add_paragraph(text)
+    p = doc.add_paragraph(normalize_spanish(text))
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     for run in p.runs:
         run.font.size = Pt(10.5)
 
 
 def add_table(doc: Document, dataframe: pd.DataFrame, title: str) -> None:
-    doc.add_paragraph(title, style="Caption")
+    doc.add_paragraph(normalize_spanish(title), style="Caption")
     table = doc.add_table(rows=1, cols=len(dataframe.columns))
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     table.style = "Table Grid"
 
     header = table.rows[0].cells
     for i, col in enumerate(dataframe.columns):
-        set_cell_text(header[i], str(col), bold=True)
+        set_cell_text(header[i], normalize_spanish(str(col)), bold=True)
         set_cell_shading(header[i], "D9EAF7")
 
     for _, row in dataframe.iterrows():
         cells = table.add_row().cells
         for i, value in enumerate(row):
-            set_cell_text(cells[i], str(value))
+            set_cell_text(cells[i], normalize_spanish(str(value)))
 
 
 def add_figure(doc: Document, filename: str, caption: str, width: float = 5.8) -> None:
@@ -69,7 +252,7 @@ def add_figure(doc: Document, filename: str, caption: str, width: float = 5.8) -
     doc.add_picture(str(path), width=Inches(width))
     last_paragraph = doc.paragraphs[-1]
     last_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    cap = doc.add_paragraph(caption, style="Caption")
+    cap = doc.add_paragraph(normalize_spanish(caption), style="Caption")
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
 
@@ -78,6 +261,9 @@ def build_report() -> None:
     ingresos = pd.read_csv(TABLES / "ingresos_reales_trimestrales.csv")
     resumen = pd.read_csv(TABLES / "resumen_inicial_final.csv")
     univariado = pd.read_csv(TABLES / "resumen_univariado.csv")
+    lineales = pd.read_csv(TABLES / "modelos_lineales_metricas.csv")
+    lineal_simple = pd.read_csv(TABLES / "regresion_lineal_simple_coeficientes.csv")
+    lineal_multiple = pd.read_csv(TABLES / "regresion_lineal_multiple_coeficientes_top.csv")
     modelo = pd.read_csv(TABLES / "modelo_imputacion_metricas.csv")
     coef = pd.read_csv(TABLES / "modelo_imputacion_coeficientes_top.csv")
     subgrupos = pd.read_csv(TABLES / "indicadores_por_subgrupos.csv")
@@ -99,37 +285,37 @@ def build_report() -> None:
     styles["Heading 2"].font.size = Pt(12)
 
     title = doc.add_heading(
-        "Evolucion del mercado laboral e ingresos reales", level=0
+        "Evolución del mercado laboral e ingresos reales", level=0
     )
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     subtitle = doc.add_paragraph(
-        "Analisis comparativo de Neuquen-Plottier y Mar del Plata, EPH 2016T2-2025T4"
+        "Análisis comparativo de Neuquén-Plottier y Mar del Plata, EPH 2016T2-2025T4"
     )
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    doc.add_paragraph("Fuente: elaboracion propia con microdatos EPH-INDEC e IPC nacional.")
+    doc.add_paragraph("Fuente: elaboración propia con microdatos EPH-INDEC e IPC nacional.")
 
-    doc.add_heading("1. Introduccion", level=1)
+    doc.add_heading("1. Introducción", level=1)
     add_paragraph(
         doc,
         "El objetivo del trabajo es analizar la evolucion de la tasa de actividad, "
         "la tasa de empleo, la tasa de desocupacion y los ingresos de la poblacion "
         "en dos aglomerados urbanos relevados por la Encuesta Permanente de Hogares "
         "(EPH). La comparacion se concentra en Neuquen-Plottier, identificado con el "
-        "codigo de aglomerado 17, y Mar del Plata, identificado con el codigo 34. "
+        "código de aglomerado 17, y Mar del Plata, identificado con el código 34. "
         "La seleccion permite contrastar dos mercados laborales con perfiles distintos: "
-        "uno asociado a la dinamica patagonica y energetica, y otro con fuerte presencia "
+        "uno asociado a la dinámica patagónica y energética, y otro con fuerte presencia "
         "de servicios, turismo y estacionalidad.",
     )
     add_paragraph(
         doc,
-        "El periodo analizado cubre desde el segundo trimestre de 2016 hasta el cuarto "
+        "El período analizado cubre desde el segundo trimestre de 2016 hasta el cuarto "
         "trimestre de 2025, que es el tramo disponible en las bases usuarias descargadas "
         "desde INDEC. Para que los ingresos sean comparables en el tiempo, se los ajusta "
         "por inflacion mediante el IPC Nivel General Nacional, base diciembre de 2016. "
         "Los valores monetarios se expresan a precios del cuarto trimestre de 2025.",
     )
 
-    doc.add_heading("2. Datos y metodologia", level=1)
+    doc.add_heading("2. Datos y metodología", level=1)
     add_paragraph(
         doc,
         "Se utilizan los microdatos de personas de la EPH. Las tasas laborales se "
@@ -142,10 +328,10 @@ def build_report() -> None:
     )
     add_paragraph(
         doc,
-        "Ademas del analisis agregado por trimestre y aglomerado, se incorporan variables "
+        "Además del análisis agregado por trimestre y aglomerado, se incorporan variables "
         "sociodemograficas y laborales: sexo, edad, nivel educativo, rama de actividad "
         "(PP04B_COD) y ocupacion (PP04D_COD). Estas variables permiten pasar de una "
-        "descripcion puramente univariada a una lectura multivariada de la evolucion "
+        "descripción puramente univariada a una lectura multivariada de la evolución "
         "de los indicadores.",
     )
     add_paragraph(
@@ -191,7 +377,7 @@ def build_report() -> None:
         summary_table[col] = summary_table[col].map(fmt_money)
     add_table(doc, summary_table, "Tabla 1. Resumen inicial-final de indicadores seleccionados")
 
-    doc.add_heading("3. Evolucion de actividad, empleo y desocupacion", level=1)
+    doc.add_heading("3. Evolución de actividad, empleo y desocupación", level=1)
     add_paragraph(
         doc,
         "La evolucion de las tasas laborales muestra diferencias relevantes entre los "
@@ -222,7 +408,7 @@ def build_report() -> None:
         "identica en todos los mercados laborales urbanos.",
     )
 
-    doc.add_heading("4. Ingresos reales y medidas de posicion", level=1)
+    doc.add_heading("4. Ingresos reales y medidas de posición", level=1)
     add_paragraph(
         doc,
         "Para analizar ingresos se trabaja con valores reales, deflactados por IPC. "
@@ -258,7 +444,7 @@ def build_report() -> None:
         "compatibles con una estructura de ingresos mas alta y dispersa en Neuquen-Plottier.",
     )
 
-    doc.add_heading("5. Exploracion univariada, no respuesta y valores atipicos", level=1)
+    doc.add_heading("5. Exploración univariada, no respuesta y valores atípicos", level=1)
     add_paragraph(
         doc,
         "La exploracion univariada permite evaluar la calidad inicial de las variables. "
@@ -269,8 +455,28 @@ def build_report() -> None:
         "de tendencia central o ajustar modelos.",
     )
     uni = univariado.copy()
-    uni = uni[["variable", "faltantes_pct", "mediana", "p01", "p99", "atipicos_iqr"]]
-    uni.columns = ["Variable", "Faltantes %", "Mediana", "P01", "P99", "Atipicos IQR"]
+    if "variable_nombre" not in uni.columns:
+        uni["variable_nombre"] = uni["variable"]
+    uni = uni[
+        [
+            "variable",
+            "variable_nombre",
+            "faltantes_pct",
+            "mediana",
+            "p01",
+            "p99",
+            "atipicos_iqr",
+        ]
+    ]
+    uni.columns = [
+        "Variable",
+        "Nombre",
+        "Faltantes %",
+        "Mediana",
+        "P01",
+        "P99",
+        "Atípicos IQR",
+    ]
     uni["Faltantes %"] = uni["Faltantes %"].map(lambda x: f"{x:.1f}%")
     for col in ["Mediana", "P01", "P99"]:
         uni[col] = uni[col].map(lambda x: f"{x:.1f}")
@@ -285,7 +491,7 @@ def build_report() -> None:
         "automaticamente porque pueden representar ausencia efectiva de ingreso laboral.",
     )
 
-    doc.add_heading("6. Analisis multivariado por sexo, edad y educacion", level=1)
+    doc.add_heading("6. Análisis multivariado por sexo, edad y educación", level=1)
     add_paragraph(
         doc,
         "El analisis por subgrupos muestra que la evolucion agregada no afecta por igual "
@@ -316,15 +522,92 @@ def build_report() -> None:
         "para revisar actividades u ocupaciones puntuales.",
     )
 
-    doc.add_heading("7. Modelo de imputacion de no respuesta de ingresos", level=1)
+    doc.add_heading("7. Modelo de imputación de no respuesta de ingresos", level=1)
     add_paragraph(
         doc,
-        "Para cumplir el objetivo de aprobacion directa se desarrollo un modelo de "
-        "regresion Ridge sobre el logaritmo del ingreso real de la ocupacion principal. "
-        "Se utilizaron como variables independientes la edad, sexo, nivel educativo, "
-        "aglomerado, anio, trimestre, rama de actividad y ocupacion. El modelo se entreno "
-        "con ocupados de 14 a 80 anos con ingreso positivo y se evaluo mediante una "
-        "particion train/test.",
+        "Como paso previo al modelo de imputacion se estimaron dos modelos de regresion "
+        "lineal sobre el logaritmo del ingreso real de la ocupacion principal. El primero "
+        "es una regresion lineal simple, que explica el ingreso unicamente a partir de la "
+        "edad. El segundo es una regresion lineal multiple, que incorpora edad, sexo, "
+        "nivel educativo, aglomerado, anio, trimestre, rama de actividad y ocupacion. "
+        "Esta comparacion permite mostrar el aporte del analisis multivariado: una sola "
+        "variable explica muy poco, mientras que el conjunto de caracteristicas personales "
+        "y laborales captura mejor las diferencias de ingresos.",
+    )
+    linear_table = lineales.copy()
+    linear_table["modelo"] = linear_table["modelo"].replace(
+        {
+            "Regresion lineal simple: log(P21 real) ~ edad": "Lineal simple: edad",
+            "Regresion lineal multiple: log(P21 real) ~ edad + sexo + educacion + aglomerado + periodo + rama + ocupacion": "Lineal multiple",
+        }
+    )
+    linear_table = linear_table[
+        ["modelo", "n_train", "n_test", "mae_pesos_2025t4", "rmse_pesos_2025t4", "r2_log"]
+    ]
+    linear_table.columns = ["Modelo", "Train", "Test", "MAE", "RMSE", "R2 log"]
+    linear_table["MAE"] = linear_table["MAE"].map(fmt_money)
+    linear_table["RMSE"] = linear_table["RMSE"].map(fmt_money)
+    linear_table["R2 log"] = linear_table["R2 log"].map(lambda x: f"{x:.3f}")
+    add_table(doc, linear_table, "Tabla 5. Comparación de regresión lineal simple y múltiple")
+    simple_effect = lineal_simple.loc[0, "impacto_pct"]
+    add_paragraph(
+        doc,
+        f"En la regresion lineal simple, la edad estandarizada tiene un coeficiente "
+        f"positivo: un aumento de un desvio estandar en la edad se asocia con un cambio "
+        f"aproximado de {simple_effect:.1f}% en el ingreso real esperado. Sin embargo, "
+        f"el R2 es practicamente nulo, por lo que la edad por si sola no alcanza para "
+        f"explicar la heterogeneidad de ingresos.",
+    )
+    add_figure(
+        doc,
+        "regresion_simple_edad_log_ingreso.png",
+        "Figura 8. Regresión lineal simple entre edad y logaritmo del ingreso real",
+    )
+    if "variable_nombre" not in lineal_multiple.columns:
+        lineal_multiple["variable_nombre"] = lineal_multiple["variable"]
+    multiple_small = lineal_multiple.head(6)[
+        ["variable", "variable_nombre", "impacto_pct"]
+    ].copy()
+    multiple_small.columns = [
+        "Variable",
+        "Nombre",
+        "Impacto porcentual aproximado",
+    ]
+    multiple_small["Impacto porcentual aproximado"] = multiple_small[
+        "Impacto porcentual aproximado"
+    ].map(lambda x: f"{x:.1f}%")
+    add_table(doc, multiple_small, "Tabla 6. Efectos principales en la regresión lineal múltiple")
+    add_paragraph(
+        doc,
+        "La regresion lineal multiple mejora claramente el ajuste. Esto indica que los "
+        "ingresos no dependen de una unica dimension individual, sino de una combinacion "
+        "de edad, sexo, credenciales educativas, ubicacion geografica, periodo historico "
+        "y caracteristicas del empleo. En particular, las categorias de ocupacion y rama "
+        "aparecen entre los efectos mas grandes, lo que confirma que el tipo de puesto "
+        "es una variable central para explicar diferencias salariales.",
+    )
+    add_figure(
+        doc,
+        "regresion_multiple_residuos.png",
+        "Figura 9. Diagnóstico de regresión múltiple: residuos frente a valores predichos",
+    )
+    add_paragraph(
+        doc,
+        "El gráfico de residuos permite evaluar visualmente si el modelo deja patrones "
+        "sistemáticos sin explicar. Si los residuos se distribuyen de forma aproximadamente "
+        "aleatoria alrededor de cero, el ajuste lineal resulta más razonable. En cambio, "
+        "patrones marcados o cambios fuertes en la dispersión indicarían problemas de "
+        "especificación u homocedasticidad.",
+    )
+    add_paragraph(
+        doc,
+        "Para cumplir el objetivo de aprobacion directa se desarrollo, ademas, un modelo "
+        "Ridge para imputar la no respuesta de ingresos. Ridge mantiene una estructura "
+        "lineal similar a la regresion multiple, pero agrega regularizacion para reducir "
+        "la inestabilidad cuando hay muchas categorias de rama y ocupacion. Se utilizaron "
+        "como variables independientes la edad, sexo, nivel educativo, aglomerado, anio, "
+        "trimestre, rama de actividad y ocupacion. El modelo se entreno con ocupados de "
+        "14 a 80 años con ingreso positivo y se evaluo mediante una particion train/test.",
     )
     m = modelo.iloc[0]
     model_table = pd.DataFrame(
@@ -339,7 +622,7 @@ def build_report() -> None:
             }
         ]
     )
-    add_table(doc, model_table, "Tabla 5. Evaluacion del modelo de imputacion")
+    add_table(doc, model_table, "Tabla 7. Evaluacion del modelo de imputacion")
     add_paragraph(
         doc,
         "El R2 sobre el logaritmo del ingreso es 0,460. Esto indica una capacidad "
@@ -350,12 +633,14 @@ def build_report() -> None:
         "distribucion de ingresos muy dispersa.",
     )
 
-    coef_small = coef.head(8)[["variable", "impacto_pct"]].copy()
-    coef_small.columns = ["Variable", "Impacto porcentual aproximado"]
+    if "variable_nombre" not in coef.columns:
+        coef["variable_nombre"] = coef["variable"]
+    coef_small = coef.head(8)[["variable", "variable_nombre", "impacto_pct"]].copy()
+    coef_small.columns = ["Variable", "Nombre", "Impacto porcentual aproximado"]
     coef_small["Impacto porcentual aproximado"] = coef_small[
         "Impacto porcentual aproximado"
     ].map(lambda x: f"{x:.1f}%")
-    add_table(doc, coef_small, "Tabla 6. Variables con mayor efecto estimado en el modelo")
+    add_table(doc, coef_small, "Tabla 8. Variables con mayor efecto estimado en el modelo Ridge")
     add_paragraph(
         doc,
         "La interpretacion de los coeficientes se realiza sobre el logaritmo del ingreso: "
@@ -385,7 +670,7 @@ def build_report() -> None:
     ]
     for col in ["Mediana original", "Mediana imputada"]:
         imp_last[col] = imp_last[col].map(fmt_money)
-    add_table(doc, imp_last, "Tabla 7. Ingresos originales e imputados, 2025T4")
+    add_table(doc, imp_last, "Tabla 9. Ingresos originales e imputados, 2025T4")
 
     doc.add_heading("8. Conclusiones", level=1)
     add_paragraph(
@@ -417,6 +702,7 @@ def build_report() -> None:
         "dos aglomerados seleccionados.",
     )
 
+    normalize_doc_text(doc)
     doc.save(REPORT_PATH)
 
 

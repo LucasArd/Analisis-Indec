@@ -12,7 +12,7 @@ from docx import Document
 from docx.shared import Inches
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -29,6 +29,24 @@ REPORT_DIR = ROOT / "informe"
 AGGLOMERATES = {
     17: "Neuquen-Plottier",
     34: "Mar del Plata",
+}
+
+VARIABLE_DESCRIPTIONS = {
+    "P21": "Ingreso de la ocupación principal",
+    "ITF": "Ingreso total familiar",
+    "IPCF": "Ingreso per cápita familiar",
+    "CH06": "Edad",
+    "CH04": "Sexo",
+    "NIVEL_ED": "Nivel educativo",
+    "NIVEL_ED_DESC": "Nivel educativo",
+    "PP04B_COD": "Rama de actividad",
+    "PP04D_COD": "Ocupación",
+    "SEXO": "Sexo",
+    "GRUPO_EDAD": "Grupo de edad",
+    "AGLOMERADO": "Aglomerado",
+    "ANO4": "Año",
+    "TRIMESTRE": "Trimestre",
+    "Edad estandarizada": "Edad",
 }
 
 USECOLS = [
@@ -60,6 +78,29 @@ def ensure_dirs() -> None:
     OUTPUT_TABLES.mkdir(parents=True, exist_ok=True)
     OUTPUT_FIGURES.mkdir(parents=True, exist_ok=True)
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def describe_variable(variable: str) -> str:
+    variable = str(variable)
+    if variable in VARIABLE_DESCRIPTIONS:
+        return VARIABLE_DESCRIPTIONS[variable]
+    if "PP04D_COD" in variable:
+        return "Ocupación"
+    if "PP04B_COD" in variable:
+        return "Rama de actividad"
+    if "NIVEL_ED" in variable:
+        return "Nivel educativo"
+    if "CH04" in variable:
+        return "Sexo"
+    if "CH06" in variable:
+        return "Edad"
+    if "AGLOMERADO" in variable:
+        return "Aglomerado"
+    if "ANO4" in variable:
+        return "Año"
+    if "TRIMESTRE" in variable:
+        return "Trimestre"
+    return "Variable derivada del modelo"
 
 
 def download_ipc() -> pd.DataFrame:
@@ -200,6 +241,7 @@ def calculate_subgroup_tables(df: pd.DataFrame) -> None:
             rows.append(
                 {
                     "variable": subgroup,
+                    "variable_nombre": describe_variable(subgroup),
                     "categoria": keys[2],
                     "anio": keys[0],
                     "aglomerado": keys[1],
@@ -270,6 +312,7 @@ def calculate_univariate_summary(df: pd.DataFrame) -> pd.DataFrame:
         rows.append(
             {
                 "variable": var,
+                "variable_nombre": describe_variable(var),
                 "casos": len(values),
                 "faltantes": int(values.isna().sum()),
                 "faltantes_pct": values.isna().mean() * 100,
@@ -287,13 +330,228 @@ def calculate_univariate_summary(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def fit_income_model(df: pd.DataFrame) -> tuple[pd.DataFrame, Pipeline, list[str]]:
+def build_income_model_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     model_df = df[
         (df["ESTADO"].eq(1))
         & (df["P21_REAL"].notna())
         & (df["P21_REAL"] > 0)
         & (df["CH06"].between(14, 80))
     ].copy()
+    y = np.log(model_df["P21_REAL"])
+    return model_df, y
+
+
+def evaluate_log_income_model(
+    model_name: str,
+    model: Pipeline,
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    y_train: pd.Series,
+    y_test: pd.Series,
+) -> dict:
+    model.fit(X_train, y_train)
+    pred_log = model.predict(X_test)
+    pred_income = np.exp(pred_log)
+    true_income = np.exp(y_test)
+    return {
+        "modelo": model_name,
+        "n_train": len(X_train),
+        "n_test": len(X_test),
+        "mae_pesos_2025t4": mean_absolute_error(true_income, pred_income),
+        "rmse_pesos_2025t4": mean_squared_error(true_income, pred_income) ** 0.5,
+        "r2_log": r2_score(y_test, pred_log),
+    }
+
+
+def fit_linear_income_models(df: pd.DataFrame) -> pd.DataFrame:
+    model_df, y = build_income_model_data(df)
+
+    simple_features = ["CH06"]
+    multiple_features = [
+        "CH06",
+        "CH04",
+        "NIVEL_ED",
+        "AGLOMERADO",
+        "ANO4",
+        "TRIMESTRE",
+        "PP04B_COD",
+        "PP04D_COD",
+    ]
+
+    X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(
+        model_df[simple_features], y, test_size=0.25, random_state=42
+    )
+    simple_model = Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                ColumnTransformer(
+                    transformers=[
+                        (
+                            "num",
+                            Pipeline(
+                                [
+                                    ("imputer", SimpleImputer(strategy="median")),
+                                    ("scaler", StandardScaler()),
+                                ]
+                            ),
+                            simple_features,
+                        )
+                    ]
+                ),
+            ),
+            ("regressor", LinearRegression()),
+        ]
+    )
+
+    X_train_m, X_test_m, y_train_m, y_test_m = train_test_split(
+        model_df[multiple_features], y, test_size=0.25, random_state=42
+    )
+    multiple_model = Pipeline(
+        steps=[
+            (
+                "preprocessor",
+                ColumnTransformer(
+                    transformers=[
+                        (
+                            "num",
+                            Pipeline(
+                                [
+                                    ("imputer", SimpleImputer(strategy="median")),
+                                    ("scaler", StandardScaler()),
+                                ]
+                            ),
+                            ["CH06", "ANO4", "TRIMESTRE"],
+                        ),
+                        (
+                            "cat",
+                            Pipeline(
+                                [
+                                    ("imputer", SimpleImputer(strategy="most_frequent")),
+                                    ("onehot", OneHotEncoder(handle_unknown="ignore")),
+                                ]
+                            ),
+                            ["CH04", "NIVEL_ED", "AGLOMERADO", "PP04B_COD", "PP04D_COD"],
+                        ),
+                    ]
+                ),
+            ),
+            ("regressor", LinearRegression()),
+        ]
+    )
+
+    metrics = pd.DataFrame(
+        [
+            evaluate_log_income_model(
+                "Regresion lineal simple: log(P21 real) ~ edad",
+                simple_model,
+                X_train_s,
+                X_test_s,
+                y_train_s,
+                y_test_s,
+            ),
+            evaluate_log_income_model(
+                "Regresion lineal multiple: log(P21 real) ~ edad + sexo + educacion + aglomerado + periodo + rama + ocupacion",
+                multiple_model,
+                X_train_m,
+                X_test_m,
+                y_train_m,
+                y_test_m,
+            ),
+        ]
+    )
+
+    simple_pred_test = simple_model.predict(X_test_s)
+    multiple_pred_test = multiple_model.predict(X_test_m)
+
+    simple_plot = X_test_s.copy()
+    simple_plot["log_ingreso_real"] = y_test_s
+    if len(simple_plot) > 4000:
+        simple_plot = simple_plot.sample(4000, random_state=42)
+    age_grid = pd.DataFrame({"CH06": np.linspace(14, 80, 100)})
+    age_pred = simple_model.predict(age_grid)
+
+    sns.set_theme(style="whitegrid")
+    plt.figure(figsize=(9, 5))
+    sns.scatterplot(
+        data=simple_plot,
+        x="CH06",
+        y="log_ingreso_real",
+        s=14,
+        alpha=0.25,
+        edgecolor=None,
+    )
+    plt.plot(age_grid["CH06"], age_pred, color="#C44E52", linewidth=2.5)
+    plt.title("Regresion lineal simple: edad y log ingreso real")
+    plt.xlabel("Edad")
+    plt.ylabel("log(P21 real)")
+    plt.tight_layout()
+    plt.savefig(OUTPUT_FIGURES / "regresion_simple_edad_log_ingreso.png", dpi=160)
+    plt.close()
+
+    residuals = y_test_m - multiple_pred_test
+    residual_plot = pd.DataFrame(
+        {
+            "log_ingreso_predicho": multiple_pred_test,
+            "residuo": residuals,
+        }
+    )
+    if len(residual_plot) > 5000:
+        residual_plot = residual_plot.sample(5000, random_state=42)
+    plt.figure(figsize=(9, 5))
+    sns.scatterplot(
+        data=residual_plot,
+        x="log_ingreso_predicho",
+        y="residuo",
+        s=14,
+        alpha=0.25,
+        edgecolor=None,
+    )
+    plt.axhline(0, color="#C44E52", linewidth=2)
+    plt.title("Regresion lineal multiple: residuos vs valores predichos")
+    plt.xlabel("log(P21 real) predicho")
+    plt.ylabel("Residuo")
+    plt.tight_layout()
+    plt.savefig(OUTPUT_FIGURES / "regresion_multiple_residuos.png", dpi=160)
+    plt.close()
+
+    simple_coef = simple_model.named_steps["regressor"].coef_[0]
+    simple_intercept = simple_model.named_steps["regressor"].intercept_
+    simple_coef_table = pd.DataFrame(
+        [
+            {
+                "modelo": "Regresion lineal simple",
+                "variable": "Edad estandarizada",
+                "variable_nombre": describe_variable("Edad estandarizada"),
+                "coef_log": simple_coef,
+                "impacto_pct": (np.exp(simple_coef) - 1) * 100,
+                "intercepto_log": simple_intercept,
+            }
+        ]
+    )
+
+    feature_names = multiple_model.named_steps["preprocessor"].get_feature_names_out()
+    multiple_coefs = multiple_model.named_steps["regressor"].coef_
+    multiple_coef_table = (
+        pd.DataFrame({"variable": feature_names, "coef_log": multiple_coefs})
+        .assign(variable_nombre=lambda x: x["variable"].map(describe_variable))
+        .assign(impacto_pct=lambda x: (np.exp(x["coef_log"]) - 1) * 100)
+        .sort_values("coef_log", key=lambda s: s.abs(), ascending=False)
+        .head(30)
+    )
+
+    metrics.to_csv(OUTPUT_TABLES / "modelos_lineales_metricas.csv", index=False)
+    simple_coef_table.to_csv(
+        OUTPUT_TABLES / "regresion_lineal_simple_coeficientes.csv", index=False
+    )
+    multiple_coef_table.to_csv(
+        OUTPUT_TABLES / "regresion_lineal_multiple_coeficientes_top.csv", index=False
+    )
+    return metrics
+
+
+def fit_income_model(df: pd.DataFrame) -> tuple[pd.DataFrame, Pipeline, list[str]]:
+    model_df, y = build_income_model_data(df)
 
     features = [
         "CH06",
@@ -306,7 +564,6 @@ def fit_income_model(df: pd.DataFrame) -> tuple[pd.DataFrame, Pipeline, list[str
         "PP04D_COD",
     ]
     X = model_df[features]
-    y = np.log(model_df["P21_REAL"])
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.25, random_state=42
@@ -369,6 +626,7 @@ def fit_income_model(df: pd.DataFrame) -> tuple[pd.DataFrame, Pipeline, list[str
     coefs = model.named_steps["regressor"].coef_
     coef_table = (
         pd.DataFrame({"variable": feature_names, "coef_log": coefs})
+        .assign(variable_nombre=lambda x: x["variable"].map(describe_variable))
         .assign(impacto_pct=lambda x: (np.exp(x["coef_log"]) - 1) * 100)
         .sort_values("coef_log", key=lambda s: s.abs(), ascending=False)
         .head(30)
@@ -550,6 +808,7 @@ def write_report(
     indicators: pd.DataFrame,
     incomes: pd.DataFrame,
     univariate: pd.DataFrame,
+    linear_metrics: pd.DataFrame,
     model_metrics: pd.DataFrame,
     summary: pd.DataFrame,
     imputed_incomes: pd.DataFrame,
@@ -604,7 +863,14 @@ La tabla `outputs/tables/resumen_univariado.csv` resume faltantes, percentiles y
 
 ## 7. Modelo de imputacion de ingresos
 
-Se ajusto un modelo Ridge sobre el logaritmo del ingreso real de la ocupacion principal (`log(P21_REAL)`). Las variables independientes incluidas fueron edad, sexo, nivel educativo, aglomerado, anio, trimestre, rama de actividad (`PP04B_COD`) y ocupacion (`PP04D_COD`). El modelo se entreno con ocupados con ingreso positivo y se evaluo con una particion train/test. Luego se aplico a los ocupados con `P21` faltante o negativo para generar ingresos imputados.
+Antes del modelo de imputacion se estimaron dos modelos de regresion lineal vistos en clase. El primero es una regresion lineal simple, donde el logaritmo del ingreso real se explica unicamente por la edad. El segundo es una regresion lineal multiple, donde se incorporan edad, sexo, nivel educativo, aglomerado, anio, trimestre, rama de actividad (`PP04B_COD`) y ocupacion (`PP04D_COD`). Estos modelos permiten mostrar como mejora la capacidad explicativa cuando se pasa de una relacion bivariada a una especificacion multivariada.
+
+| Modelo | n train | n test | MAE | RMSE | R2 log |
+|---|---:|---:|---:|---:|---:|
+| {linear_metrics.loc[0, 'modelo']} | {int(linear_metrics.loc[0, 'n_train'])} | {int(linear_metrics.loc[0, 'n_test'])} | {linear_metrics.loc[0, 'mae_pesos_2025t4']:.0f} | {linear_metrics.loc[0, 'rmse_pesos_2025t4']:.0f} | {linear_metrics.loc[0, 'r2_log']:.3f} |
+| {linear_metrics.loc[1, 'modelo']} | {int(linear_metrics.loc[1, 'n_train'])} | {int(linear_metrics.loc[1, 'n_test'])} | {linear_metrics.loc[1, 'mae_pesos_2025t4']:.0f} | {linear_metrics.loc[1, 'rmse_pesos_2025t4']:.0f} | {linear_metrics.loc[1, 'r2_log']:.3f} |
+
+Para la imputacion de no respuesta se ajusto ademas un modelo Ridge sobre el logaritmo del ingreso real de la ocupacion principal (`log(P21_REAL)`). Ridge mantiene una estructura lineal, pero agrega regularizacion para reducir la inestabilidad de coeficientes cuando hay muchas categorias de rama y ocupacion. El modelo se entreno con ocupados con ingreso positivo y se evaluo con una particion train/test. Luego se aplico a los ocupados con `P21` faltante o negativo para generar ingresos imputados.
 
 Metricas principales:
 
@@ -668,11 +934,20 @@ def main() -> None:
     df, _ = add_real_income(df, ipc_q)
     incomes = calculate_income_tables(df)
     univariate = calculate_univariate_summary(df)
+    linear_metrics = fit_linear_income_models(df)
     model_metrics, model, features = fit_income_model(df)
     imputed_incomes = calculate_imputed_income_tables(df, model, features)
     make_plots(indicators, incomes, df)
     summary = first_last_summary(indicators, incomes)
-    write_report(indicators, incomes, univariate, model_metrics, summary, imputed_incomes)
+    write_report(
+        indicators,
+        incomes,
+        univariate,
+        linear_metrics,
+        model_metrics,
+        summary,
+        imputed_incomes,
+    )
 
     filtered_path = ROOT / "data" / "infoProcesada" / "eph" / "eph_aglomerados_17_34.csv.gz"
     df.to_csv(filtered_path, index=False, compression="gzip")

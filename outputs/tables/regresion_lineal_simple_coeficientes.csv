@@ -1,0 +1,2 @@
+modelo,variable,variable_nombre,coef_log,impacto_pct,intercepto_log
+Regresion lineal simple,Edad estandarizada,Edad,0.03431476764983095,3.491031175134207,13.62840225360828
