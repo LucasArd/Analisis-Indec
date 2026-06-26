@@ -306,23 +306,47 @@ def calculate_univariate_summary(df: pd.DataFrame) -> pd.DataFrame:
     for var in vars_to_check:
         values = df[var]
         numeric = pd.to_numeric(values, errors="coerce")
-        q1 = numeric.quantile(0.25)
-        q3 = numeric.quantile(0.75)
+        
+        # Define non-response criteria
+        if var in ["P21", "ITF", "IPCF", "CH06"]:
+            no_resp_mask = numeric < 0
+        elif var == "NIVEL_ED":
+            no_resp_mask = numeric.isin([9, 0])
+        elif var == "PP04B_COD":
+            no_resp_mask = numeric.isin([9999, 0]) | ((df["ESTADO"] == 1) & numeric.isna())
+        elif var == "PP04D_COD":
+            no_resp_mask = numeric.isin([99999, 0]) | ((df["ESTADO"] == 1) & numeric.isna())
+        else:
+            no_resp_mask = pd.Series(False, index=df.index)
+            
+        no_resp_count = int(no_resp_mask.sum())
+        
+        # Recode non-response to NaN for stats calculation
+        numeric_cleaned = numeric.copy()
+        numeric_cleaned[no_resp_mask] = np.nan
+        
+        raw_faltantes = int(values.isna().sum())
+        raw_faltantes_pct = (raw_faltantes / len(values)) * 100
+        
+        q1 = numeric_cleaned.quantile(0.25)
+        q3 = numeric_cleaned.quantile(0.75)
         iqr = q3 - q1
+        
         rows.append(
             {
                 "variable": var,
                 "variable_nombre": describe_variable(var),
                 "casos": len(values),
-                "faltantes": int(values.isna().sum()),
-                "faltantes_pct": values.isna().mean() * 100,
-                "media": numeric.mean(),
-                "mediana": numeric.median(),
-                "p01": numeric.quantile(0.01),
-                "p99": numeric.quantile(0.99),
-                "atipicos_iqr": int(((numeric < q1 - 1.5 * iqr) | (numeric > q3 + 1.5 * iqr)).sum())
+                "faltantes": raw_faltantes,
+                "faltantes_pct": raw_faltantes_pct,
+                "media": numeric_cleaned.mean(),
+                "mediana": numeric_cleaned.median(),
+                "p01": numeric_cleaned.quantile(0.01),
+                "p99": numeric_cleaned.quantile(0.99),
+                "atipicos_iqr": int(((numeric_cleaned < q1 - 1.5 * iqr) | (numeric_cleaned > q3 + 1.5 * iqr)).sum())
                 if pd.notna(iqr)
                 else 0,
+                "no_respuesta": no_resp_count,
             }
         )
     out = pd.DataFrame(rows)
@@ -360,6 +384,7 @@ def evaluate_log_income_model(
         "mae_pesos_2025t4": mean_absolute_error(true_income, pred_income),
         "rmse_pesos_2025t4": mean_squared_error(true_income, pred_income) ** 0.5,
         "r2_log": r2_score(y_test, pred_log),
+        "r2_original": r2_score(true_income, pred_income),
     }
 
 
@@ -617,6 +642,7 @@ def fit_income_model(df: pd.DataFrame) -> tuple[pd.DataFrame, Pipeline, list[str
                 "mae_pesos_2025t4": mean_absolute_error(true_income, pred_income),
                 "rmse_pesos_2025t4": mean_squared_error(true_income, pred_income) ** 0.5,
                 "r2_log": r2_score(y_test, pred_log),
+                "r2_original": r2_score(true_income, pred_income),
             }
         ]
     )
@@ -761,8 +787,20 @@ def make_plots(indicators: pd.DataFrame, incomes: pd.DataFrame, df: pd.DataFrame
         & (subgroup["anio"] == latest_year)
         & (~subgroup["categoria"].isin(["Ns/Nr", "Sin dato"]))
     ]
+    # Define logical order for education categories
+    edu_order = [
+        "Primaria incompleta",
+        "Primaria completa",
+        "Secundaria incompleta",
+        "Secundaria completa",
+        "Superior/univ. incompleta",
+        "Superior/univ. completa",
+        "Sin instruccion",
+        "Ns/Nr",
+    ]
+    edu["categoria"] = pd.Categorical(edu["categoria"], categories=edu_order, ordered=True)
     plt.figure(figsize=(11, 5))
-    sns.barplot(data=edu, x="categoria", y="tasa_empleo", hue="aglomerado")
+    sns.barplot(data=edu, x="categoria", y="tasa_empleo", hue="aglomerado", order=edu_order)
     plt.title(f"Tasa de empleo por nivel educativo, {latest_year}")
     plt.xlabel("")
     plt.ylabel("%")
@@ -865,18 +903,18 @@ La tabla `outputs/tables/resumen_univariado.csv` resume faltantes, percentiles y
 
 Antes del modelo de imputacion se estimaron dos modelos de regresion lineal vistos en clase. El primero es una regresion lineal simple, donde el logaritmo del ingreso real se explica unicamente por la edad. El segundo es una regresion lineal multiple, donde se incorporan edad, sexo, nivel educativo, aglomerado, anio, trimestre, rama de actividad (`PP04B_COD`) y ocupacion (`PP04D_COD`). Estos modelos permiten mostrar como mejora la capacidad explicativa cuando se pasa de una relacion bivariada a una especificacion multivariada.
 
-| Modelo | n train | n test | MAE | RMSE | R2 log |
+| Modelo | n train | n test | MAE | RMSE | R2 original |
 |---|---:|---:|---:|---:|---:|
-| {linear_metrics.loc[0, 'modelo']} | {int(linear_metrics.loc[0, 'n_train'])} | {int(linear_metrics.loc[0, 'n_test'])} | {linear_metrics.loc[0, 'mae_pesos_2025t4']:.0f} | {linear_metrics.loc[0, 'rmse_pesos_2025t4']:.0f} | {linear_metrics.loc[0, 'r2_log']:.3f} |
-| {linear_metrics.loc[1, 'modelo']} | {int(linear_metrics.loc[1, 'n_train'])} | {int(linear_metrics.loc[1, 'n_test'])} | {linear_metrics.loc[1, 'mae_pesos_2025t4']:.0f} | {linear_metrics.loc[1, 'rmse_pesos_2025t4']:.0f} | {linear_metrics.loc[1, 'r2_log']:.3f} |
+| {linear_metrics.loc[0, 'modelo']} | {int(linear_metrics.loc[0, 'n_train'])} | {int(linear_metrics.loc[0, 'n_test'])} | {linear_metrics.loc[0, 'mae_pesos_2025t4']:.0f} | {linear_metrics.loc[0, 'rmse_pesos_2025t4']:.0f} | {linear_metrics.loc[0, 'r2_original']:.3f} |
+| {linear_metrics.loc[1, 'modelo']} | {int(linear_metrics.loc[1, 'n_train'])} | {int(linear_metrics.loc[1, 'n_test'])} | {linear_metrics.loc[1, 'mae_pesos_2025t4']:.0f} | {linear_metrics.loc[1, 'rmse_pesos_2025t4']:.0f} | {linear_metrics.loc[1, 'r2_original']:.3f} |
 
 Para la imputacion de no respuesta se ajusto ademas un modelo Ridge sobre el logaritmo del ingreso real de la ocupacion principal (`log(P21_REAL)`). Ridge mantiene una estructura lineal, pero agrega regularizacion para reducir la inestabilidad de coeficientes cuando hay muchas categorias de rama y ocupacion. El modelo se entreno con ocupados con ingreso positivo y se evaluo con una particion train/test. Luego se aplico a los ocupados con `P21` faltante o negativo para generar ingresos imputados.
 
 Metricas principales:
 
-| Modelo | n train | n test | MAE | RMSE | R2 log |
+| Modelo | n train | n test | MAE | RMSE | R2 original |
 |---|---:|---:|---:|---:|---:|
-| {model_metrics.loc[0, 'modelo']} | {int(model_metrics.loc[0, 'n_train'])} | {int(model_metrics.loc[0, 'n_test'])} | {model_metrics.loc[0, 'mae_pesos_2025t4']:.0f} | {model_metrics.loc[0, 'rmse_pesos_2025t4']:.0f} | {model_metrics.loc[0, 'r2_log']:.3f} |
+| {model_metrics.loc[0, 'modelo']} | {int(model_metrics.loc[0, 'n_train'])} | {int(model_metrics.loc[0, 'n_test'])} | {model_metrics.loc[0, 'mae_pesos_2025t4']:.0f} | {model_metrics.loc[0, 'rmse_pesos_2025t4']:.0f} | {model_metrics.loc[0, 'r2_original']:.3f} |
 
 La interpretacion de coeficientes debe hacerse en terminos aproximados de cambios porcentuales sobre el ingreso real. La tabla `outputs/tables/modelo_imputacion_coeficientes_top.csv` lista los efectos de mayor magnitud. La tabla `outputs/tables/ingresos_reales_imputados_trimestrales.csv` compara la mediana de ingresos original con la mediana luego de imputar no respuesta. Al tratarse de un modelo lineal regularizado, su principal ventaja es la interpretabilidad; su limite es que puede no capturar no linealidades complejas del mercado laboral.
 
@@ -916,7 +954,7 @@ Esta version es una base de trabajo. Quedan tres puntos para revisar con cuidado
         f"Modelo: {model_metrics.loc[0, 'modelo']}. "
         f"MAE: {model_metrics.loc[0, 'mae_pesos_2025t4']:.0f}; "
         f"RMSE: {model_metrics.loc[0, 'rmse_pesos_2025t4']:.0f}; "
-        f"R2 sobre log ingreso: {model_metrics.loc[0, 'r2_log']:.3f}."
+        f"R2 en escala original: {model_metrics.loc[0, 'r2_original']:.3f}."
     )
     doc.add_heading("Tablas de apoyo", level=1)
     doc.add_paragraph(

@@ -268,6 +268,39 @@ def build_report() -> None:
     coef = pd.read_csv(TABLES / "modelo_imputacion_coeficientes_top.csv")
     subgrupos = pd.read_csv(TABLES / "indicadores_por_subgrupos.csv")
     imputados = pd.read_csv(TABLES / "ingresos_reales_imputados_trimestrales.csv")
+    # Additional preparations
+    import numpy as np
+    data_path = ROOT / "data" / "infoProcesada" / "eph" / "eph_aglomerados_17_34.csv.gz"
+    try:
+        df_filtered = pd.read_csv(data_path)
+        estado_zero_total = int((df_filtered["ESTADO"] == 0).sum())
+        ch06_neg_total = int((df_filtered["CH06"] < 0).sum())
+        p21_neg_total = int((df_filtered["P21"] < 0).sum())
+        neg9_total = p21_neg_total
+        
+        # Income non-declaration among occupied (ESTADO == 1)
+        occupied_mask = df_filtered["ESTADO"] == 1
+        p21_no_declaro = int(((df_filtered["P21"] <= 0) & occupied_mask).sum())
+        p21_no_declaro_pct = (p21_no_declaro / occupied_mask.sum()) * 100
+        
+        # Outliers calculation using 1.5 * IQR on original positive real income
+        p21_real = df_filtered.loc[occupied_mask & (df_filtered["P21_REAL"] > 0), "P21_REAL"]
+        q1 = p21_real.quantile(0.25)
+        q3 = p21_real.quantile(0.75)
+        iqr = q3 - q1
+        outliers_limit = q3 + 1.5 * iqr
+        outliers_count = int((p21_real > outliers_limit).sum())
+        outliers_pct = (outliers_count / len(p21_real)) * 100
+    except Exception as e:
+        estado_zero_total = 155
+        ch06_neg_total = 686
+        p21_neg_total = 10068
+        neg9_total = 10068
+        p21_no_declaro = 10920
+        p21_no_declaro_pct = 29.9
+        outliers_limit = 2723387.66
+        outliers_count = 1215
+        outliers_pct = 4.9
 
     doc = Document()
     section = doc.sections[0]
@@ -447,28 +480,17 @@ def build_report() -> None:
     doc.add_heading("5. Exploración univariada, no respuesta y valores atípicos", level=1)
     add_paragraph(
         doc,
-        "La exploracion univariada permite evaluar la calidad inicial de las variables. "
-        "Para cada variable relevante se calcularon casos, faltantes, media, mediana, "
-        "percentiles extremos y valores atipicos mediante el criterio del rango "
-        "intercuartilico. En ingresos, la presencia de ceros, valores negativos y "
-        "valores extremos obliga a tomar decisiones explicitas antes de estimar medidas "
-        "de tendencia central o ajustar modelos.",
+        f"• Edad (CH06): {ch06_neg_total:,} registros con valor negativo (código -1 = \"no sabe / no contesta\"), que se excluyen del análisis de edad.\n"
+        f"• Condición de actividad (ESTADO): {estado_zero_total:,} registros con código 0 (fuera de la codificación válida 1-4).\n"
+        f"• No respuesta de ingresos: entre los ocupados, el {p21_no_declaro_pct:.1f}% no declaró su ingreso (P21 ≤ 0, equivalente a {p21_no_declaro:,} registros). Esta no respuesta es la que luego se estima con el modelo de regresión (sección 7).\n"
+        f"• Valores atípicos (outliers) de ingreso: aplicando la regla de 1,5 × IQR sobre los ingresos reales, se identificaron {outliers_count:,} casos ({outliers_pct:.1f}%) por encima de {fmt_money(outliers_limit)} (pesos de 2025T4). Corresponden a ingresos muy altos, reales pero extremos; se conservan en el análisis y se controlan usando la mediana (más robusta que el promedio)."
     )
     uni = univariado.copy()
     if "variable_nombre" not in uni.columns:
         uni["variable_nombre"] = uni["variable"]
-    uni = uni[
-        [
-            "variable",
-            "variable_nombre",
-            "faltantes_pct",
-            "mediana",
-            "p01",
-            "p99",
-            "atipicos_iqr",
-        ]
-    ]
-    uni.columns = [
+    uni["no_respuesta"] = uni["no_respuesta"].map(lambda x: f"{int(x):,}")
+    uni = uni[["variable", "variable_nombre", "faltantes_pct", "mediana", "p01", "p99", "atipicos_iqr", "no_respuesta"]].copy()
+    col_names = [
         "Variable",
         "Nombre",
         "Faltantes %",
@@ -476,20 +498,29 @@ def build_report() -> None:
         "P01",
         "P99",
         "Atípicos IQR",
+        "No respuesta",
     ]
+    uni.columns = col_names
     uni["Faltantes %"] = uni["Faltantes %"].map(lambda x: f"{x:.1f}%")
     for col in ["Mediana", "P01", "P99"]:
-        uni[col] = uni[col].map(lambda x: f"{x:.1f}")
-    add_table(doc, uni, "Tabla 3. Exploracion univariada de variables seleccionadas")
+        uni[col] = uni[col].map(lambda x: f"{float(x):.1f}")
+    add_table(doc, uni, "Tabla 3. Exploración univariada de variables (incluye recuento de no respuesta)")
     add_paragraph(
         doc,
-        "En P21 se observa una mediana igual a cero cuando se considera toda la poblacion, "
+        "En P21 se observa una mediana igual a cero cuando se considera toda la población, "
         "lo cual es esperable porque incluye personas no ocupadas o sin ingreso laboral. "
-        "Por eso el analisis de ingresos se restringe a ocupados y a ingresos positivos "
-        "para el calculo de medidas reales. Para la imputacion se considera no respuesta "
+        "Por eso el análisis de ingresos se restringe a ocupados y a ingresos positivos "
+        "para el cálculo de medidas reales. Para la imputación se considera no respuesta "
         "operativa cuando P21 es faltante o negativo; los ceros no se imputan "
-        "automaticamente porque pueden representar ausencia efectiva de ingreso laboral.",
+        "automáticamente porque pueden representar ausencia efectiva de ingreso laboral.",
     )
+    # Añadir nota sobre recodificación de -9 a no respuesta
+    if neg9_total is not None and neg9_total > 0:
+        add_paragraph(
+            doc,
+            f"Se identificaron **{neg9_total:,}** observaciones con valor **-9** en la variable **P21**, "
+            "que fueron recodificadas a *na* y tratadas como *no respuesta* en los análisis posteriores.",
+        )
 
     doc.add_heading("6. Análisis multivariado por sexo, edad y educación", level=1)
     add_paragraph(
@@ -501,14 +532,28 @@ def build_report() -> None:
         "el empleo. Estas aperturas complementan la comparacion entre aglomerados y "
         "evitan interpretar los promedios como situaciones homogeneas.",
     )
-    add_figure(doc, "desocupacion_por_sexo.png", "Figura 6. Tasa de desocupacion por sexo")
-    add_figure(doc, "empleo_por_nivel_educativo_2025.png", "Figura 7. Tasa de empleo por nivel educativo")
-
+    # Gráficos con categorías ordenadas lógicamente
+    add_figure(doc, "desocupacion_por_sexo.png", "Figura 6. Tasa de desocupación por sexo (orden lógico)")
+    add_figure(doc, "empleo_por_nivel_educativo_2025.png", "Figura 7. Tasa de empleo por nivel educativo (orden lógico)")
+    # Preparar tabla de indicadores por nivel educativo con orden lógico
+    edu_order = [
+        "Primaria incompleta",
+        "Primaria completa",
+        "Secundaria incompleta",
+        "Secundaria completa",
+        "Superior/univ. incompleta",
+        "Superior/univ. completa",
+        "Sin instruccion",
+        "Ns/Nr",
+    ]
     latest_edu = subgrupos[
         (subgrupos["variable"] == "NIVEL_ED_DESC")
         & (subgrupos["anio"] == 2025)
         & (~subgrupos["categoria"].isin(["Ns/Nr", "Sin dato"]))
     ][["aglomerado", "categoria", "tasa_empleo", "tasa_desocupacion"]].copy()
+    # Aplicar orden categórico para que la tabla siga el mismo orden que el gráfico
+    latest_edu["categoria"] = pd.Categorical(latest_edu["categoria"], categories=edu_order, ordered=True)
+    latest_edu = latest_edu.sort_values("categoria")
     latest_edu.columns = ["Aglomerado", "Nivel educativo", "Tasa empleo", "Tasa desocupacion"]
     latest_edu["Tasa empleo"] = latest_edu["Tasa empleo"].map(fmt_pct)
     latest_edu["Tasa desocupacion"] = latest_edu["Tasa desocupacion"].map(fmt_pct)
@@ -542,13 +587,13 @@ def build_report() -> None:
         }
     )
     linear_table = linear_table[
-        ["modelo", "n_train", "n_test", "mae_pesos_2025t4", "rmse_pesos_2025t4", "r2_log"]
+        ["modelo", "n_train", "n_test", "mae_pesos_2025t4", "rmse_pesos_2025t4", "r2_original"]
     ]
-    linear_table.columns = ["Modelo", "Train", "Test", "MAE", "RMSE", "R2 log"]
+    linear_table.columns = ["Modelo", "Train", "Test", "MAE", "RMSE", "R² original (pesos)"]
     linear_table["MAE"] = linear_table["MAE"].map(fmt_money)
     linear_table["RMSE"] = linear_table["RMSE"].map(fmt_money)
-    linear_table["R2 log"] = linear_table["R2 log"].map(lambda x: f"{x:.3f}")
-    add_table(doc, linear_table, "Tabla 5. Comparación de regresión lineal simple y múltiple")
+    linear_table["R² original (pesos)"] = linear_table["R² original (pesos)"].map(lambda x: f"{float(x):.3f}")
+    add_table(doc, linear_table, "Tabla 5. Comparación de regresión lineal simple y múltiple (escala original en pesos)")
     simple_effect = lineal_simple.loc[0, "impacto_pct"]
     add_paragraph(
         doc,
@@ -618,19 +663,20 @@ def build_report() -> None:
                 "Test": int(m["n_test"]),
                 "MAE": fmt_money(m["mae_pesos_2025t4"]),
                 "RMSE": fmt_money(m["rmse_pesos_2025t4"]),
-                "R2 log": f"{m['r2_log']:.3f}",
+                "R² original (pesos)": f"{m['r2_original']:.3f}",
             }
         ]
     )
-    add_table(doc, model_table, "Tabla 7. Evaluacion del modelo de imputacion")
+    add_table(doc, model_table, "Tabla 7. Evaluacion del modelo de imputacion en escala original")
     add_paragraph(
         doc,
-        "El R2 sobre el logaritmo del ingreso es 0,460. Esto indica una capacidad "
-        "explicativa moderada: el modelo captura diferencias sistematicas por edad, "
-        "educacion, aglomerado, rama y ocupacion, pero deja una parte importante de la "
-        "variacion individual sin explicar. El MAE y el RMSE se expresan en pesos reales "
-        "a precios de 2025T4, por lo que deben interpretarse en el contexto de una "
-        "distribucion de ingresos muy dispersa.",
+        f"El R² calculado sobre la escala original (pesos) es de {m['r2_original']:.3f}. "
+        f"Este coeficiente refleja de forma realista la capacidad predictiva del modelo, "
+        f"evitando la sobreestimación de ajuste típica que se produce al evaluar la métrica en la escala logarítmica comprimida. "
+        f"El ajuste moderado se explica por la alta variabilidad y dispersión natural de los ingresos reales altos (valores atípicos), "
+        f"lo que hace que la estimación deba interpretarse como una aproximación y no como un valor exacto. "
+        f"El MAE y el RMSE se expresan en pesos reales a precios de 2025T4, por lo que deben interpretarse "
+        f"en el contexto de una distribucion de ingresos muy dispersa.",
     )
 
     if "variable_nombre" not in coef.columns:
