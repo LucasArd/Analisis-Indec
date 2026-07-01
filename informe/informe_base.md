@@ -55,7 +55,7 @@ Metricas principales:
 
 | Modelo | n train | n test | MAE | RMSE | R2 original |
 |---|---:|---:|---:|---:|---:|
-| Ridge sobre log(P21 real) | 18395 | 6132 | 438927 | 765418 | 0.358 |
+| Ridge sobre log(P21 real) | 18395 | 6132 | 438927 | 765421 | 0.358 |
 
 La interpretacion de coeficientes debe hacerse en terminos aproximados de cambios porcentuales sobre el ingreso real. La tabla `outputs/tables/modelo_imputacion_coeficientes_top.csv` lista los efectos de mayor magnitud. La tabla `outputs/tables/ingresos_reales_imputados_trimestrales.csv` compara la mediana de ingresos original con la mediana luego de imputar no respuesta. Al tratarse de un modelo lineal regularizado, su principal ventaja es la interpretabilidad; su limite es que puede no capturar no linealidades complejas del mercado laboral.
 

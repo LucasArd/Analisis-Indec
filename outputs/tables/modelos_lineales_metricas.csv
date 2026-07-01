@@ -1,3 +1,3 @@
 modelo,n_train,n_test,mae_pesos_2025t4,rmse_pesos_2025t4,r2_log,r2_original
 Regresion lineal simple: log(P21 real) ~ edad,18395,6132,615552.169491379,1003449.1021443312,0.0011703004996884703,-0.10327987112163783
-Regresion lineal multiple: log(P21 real) ~ edad + sexo + educacion + aglomerado + periodo + rama + ocupacion,18395,6132,443111.6225623297,773494.1191119879,0.4535819737003727,0.34444515794027164
+Regresion lineal multiple: log(P21 real) ~ edad + sexo + educacion + aglomerado + periodo + rama + ocupacion,18395,6132,443111.69915488624,773494.0801595756,0.4535816631372265,0.3444452239664798

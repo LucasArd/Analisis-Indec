@@ -278,9 +278,10 @@ def build_report() -> None:
         p21_neg_total = int((df_filtered["P21"] < 0).sum())
         neg9_total = p21_neg_total
         
-        # Income non-declaration among occupied (ESTADO == 1)
+        # Income non-response among occupied (ESTADO == 1). Zero is an
+        # observed value and must not be counted or imputed as non-response.
         occupied_mask = df_filtered["ESTADO"] == 1
-        p21_no_declaro = int(((df_filtered["P21"] <= 0) & occupied_mask).sum())
+        p21_no_declaro = int(((df_filtered["P21"] < 0) & occupied_mask).sum())
         p21_no_declaro_pct = (p21_no_declaro / occupied_mask.sum()) * 100
         
         # Outliers calculation using 1.5 * IQR on original positive real income
@@ -296,8 +297,8 @@ def build_report() -> None:
         ch06_neg_total = 686
         p21_neg_total = 10068
         neg9_total = 10068
-        p21_no_declaro = 10920
-        p21_no_declaro_pct = 29.9
+        p21_no_declaro = 10068
+        p21_no_declaro_pct = 27.6
         outliers_limit = 2723387.66
         outliers_count = 1215
         outliers_pct = 4.9
@@ -482,7 +483,7 @@ def build_report() -> None:
         doc,
         f"• Edad (CH06): {ch06_neg_total:,} registros con valor negativo (código -1 = \"no sabe / no contesta\"), que se excluyen del análisis de edad.\n"
         f"• Condición de actividad (ESTADO): {estado_zero_total:,} registros con código 0 (fuera de la codificación válida 1-4).\n"
-        f"• No respuesta de ingresos: entre los ocupados, el {p21_no_declaro_pct:.1f}% no declaró su ingreso (P21 ≤ 0, equivalente a {p21_no_declaro:,} registros). Esta no respuesta es la que luego se estima con el modelo de regresión (sección 7).\n"
+        f"• No respuesta de ingresos: entre los ocupados, el {p21_no_declaro_pct:.1f}% no declaró su ingreso (P21 < 0; el código observado es -9), equivalente a {p21_no_declaro:,} registros. Esta no respuesta es la que luego se estima con el modelo de regresión (sección 7). Los valores P21 = 0 no se clasifican como no respuesta ni se imputan.\n"
         f"• Valores atípicos (outliers) de ingreso: aplicando la regla de 1,5 × IQR sobre los ingresos reales, se identificaron {outliers_count:,} casos ({outliers_pct:.1f}%) por encima de {fmt_money(outliers_limit)} (pesos de 2025T4). Corresponden a ingresos muy altos, reales pero extremos; se conservan en el análisis y se controlan usando la mediana (más robusta que el promedio)."
     )
     uni = univariado.copy()
@@ -518,8 +519,8 @@ def build_report() -> None:
     if neg9_total is not None and neg9_total > 0:
         add_paragraph(
             doc,
-            f"Se identificaron **{neg9_total:,}** observaciones con valor **-9** en la variable **P21**, "
-            "que fueron recodificadas a *na* y tratadas como *no respuesta* en los análisis posteriores.",
+            f"Se identificaron {neg9_total:,} observaciones con valor -9 en la variable P21, "
+            "que fueron tratadas como no respuesta en los análisis posteriores.",
         )
 
     doc.add_heading("6. Análisis multivariado por sexo, edad y educación", level=1)
@@ -537,13 +538,13 @@ def build_report() -> None:
     add_figure(doc, "empleo_por_nivel_educativo_2025.png", "Figura 7. Tasa de empleo por nivel educativo (orden lógico)")
     # Preparar tabla de indicadores por nivel educativo con orden lógico
     edu_order = [
+        "Sin instruccion",
         "Primaria incompleta",
         "Primaria completa",
         "Secundaria incompleta",
         "Secundaria completa",
         "Superior/univ. incompleta",
         "Superior/univ. completa",
-        "Sin instruccion",
         "Ns/Nr",
     ]
     latest_edu = subgrupos[

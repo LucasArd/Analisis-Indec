@@ -773,6 +773,8 @@ def make_plots(indicators: pd.DataFrame, incomes: pd.DataFrame, df: pd.DataFrame
         y="tasa_desocupacion",
         hue="aglomerado",
         style="categoria",
+        hue_order=["Mar del Plata", "Neuquen-Plottier"],
+        style_order=["Varon", "Mujer"],
         marker="o",
     )
     plt.title("Tasa de desocupacion por sexo")
@@ -789,13 +791,13 @@ def make_plots(indicators: pd.DataFrame, incomes: pd.DataFrame, df: pd.DataFrame
     ]
     # Define logical order for education categories
     edu_order = [
+        "Sin instruccion",
         "Primaria incompleta",
         "Primaria completa",
         "Secundaria incompleta",
         "Secundaria completa",
         "Superior/univ. incompleta",
         "Superior/univ. completa",
-        "Sin instruccion",
         "Ns/Nr",
     ]
     edu["categoria"] = pd.Categorical(edu["categoria"], categories=edu_order, ordered=True)
